@@ -2,7 +2,7 @@
 
 A single-file web app for picking a winner from a list of names — up to 12 names race as greyhounds, first past the post wins. Built for group decision-making where you want the outcome to feel fair *and* look exciting.
 
-**Live demo:** _(add your hosted URL here once deployed)_
+**Live demo:** (https://greyhound-derby-decision-maker.netlify.app/)
 
 ---
 
