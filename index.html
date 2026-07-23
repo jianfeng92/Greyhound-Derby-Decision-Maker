@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Greyhound Derby — Name Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy: #0a1420;
+    --navy-2: #0f1e30;
+    --panel: #122238;
+    --panel-2: #16283f;
+    --turf-1: #103d24;
+    --turf-2: #1a5c34;
+    --line: rgba(255,255,255,0.16);
+    --gold: #d4af37;
+    --gold-bright: #f2d16b;
+    --white: #f4f7fa;
+    --muted: #8ea0b5;
+    --live-red: #e5383b;
+    --radius: 10px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(1200px 800px at 50% -10%, #14304a 0%, var(--navy) 55%, #060c14 100%);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important;}
+  }
+  .oswald{font-family:'Oswald', sans-serif;}
+  .mono{font-family:'Space Mono', monospace;}
+
+  #app{max-width: 1180px; margin: 0 auto; padding: 28px 20px 60px;}
+
+  /* ---------- Header brand ---------- */
+  .brand{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 22px; flex-wrap: wrap; gap: 12px;
+  }
+  .brand-mark{display:flex; align-items:center; gap:12px;}
+  .brand-badge{
+    width:42px; height:42px; border-radius:50%;
+    background: conic-gradient(from 220deg, var(--gold), #a97c1f, var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald'; font-weight:700; color:#241a04; font-size:18px;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+  }
+  .brand-title{font-family:'Oswald'; font-weight:600; font-size: 22px; letter-spacing: 0.5px; line-height:1;}
+  .brand-title span{color: var(--gold-bright);}
+  .brand-sub{color: var(--muted); font-size: 12.5px; margin-top:3px; letter-spacing:0.3px;}
+  #sound-toggle{
+    position:fixed; top:18px; right:18px; z-index:60;
+    width:42px; height:42px; border-radius:50%;
+    background: var(--panel); border:1px solid var(--line); color: var(--white);
+    font-size:17px; cursor:pointer; box-shadow: var(--shadow);
+    display:flex; align-items:center; justify-content:center; transition: border-color .15s;
+  }
+  #sound-toggle:hover{border-color: var(--gold);}
+  @media (max-width: 560px){ #sound-toggle{ top:12px; right:12px; width:38px; height:38px; font-size:15px; } }
+  .live-pill{
+    display:flex; align-items:center; gap:7px; background: var(--panel); border:1px solid var(--line);
+    padding:7px 12px; border-radius: 999px; font-size:12px; letter-spacing:1px; color: var(--muted); font-family:'Oswald';
+  }
+  .live-dot{width:8px; height:8px; border-radius:50%; background: #3a4a5c;}
+  .live-pill.on .live-dot{background: var(--live-red); box-shadow: 0 0 8px var(--live-red); animation: pulse 1s infinite;}
+  .live-pill.on{color: var(--white);}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- Setup screen ---------- */
+  #setup-screen .intro{padding: 26px 26px 8px;}
+  #setup-screen h1{font-family:'Oswald'; font-size: clamp(26px,4vw,36px); margin:0 0 6px; font-weight:600;}
+  #setup-screen .intro p{color: var(--muted); margin:0; font-size:14.5px; line-height:1.5; max-width: 620px;}
+
+  .setup-grid{display:grid; grid-template-columns: 1.5fr 1fr; gap: 18px; padding: 20px 26px 26px;}
+  @media (max-width: 800px){ .setup-grid{grid-template-columns: 1fr;} }
+
+  .section-label{
+    font-family:'Oswald'; font-size:12.5px; letter-spacing:1.5px; text-transform:uppercase;
+    color: var(--gold-bright); margin: 0 0 12px; display:flex; align-items:center; gap:8px;
+  }
+  .section-label::after{content:""; flex:1; height:1px; background: var(--line);}
+
+  #name-list{display:flex; flex-direction:column; gap:8px;}
+  .name-row{
+    display:flex; align-items:center; gap:10px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 6px 6px 0; transition: border-color .15s;
+  }
+  .name-row:focus-within{border-color: var(--gold);}
+  .trap-chip{
+    width:34px; height:34px; min-width:34px; border-radius:6px 0 0 6px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald'; font-weight:700; font-size:14px;
+  }
+  .name-row input{
+    flex:1; background:transparent; border:none; outline:none; color: var(--white);
+    font-family:'Inter'; font-size:14.5px; padding: 9px 4px;
+  }
+  .name-row input::placeholder{color:#5c6f83;}
+  .remove-btn{
+    background:transparent; border:none; color: var(--muted); cursor:pointer; font-size:16px;
+    padding: 4px 10px; line-height:1; border-radius:6px;
+  }
+  .remove-btn:hover{color: var(--live-red); background: rgba(229,56,59,0.1);}
+
+  #add-name-btn{
+    margin-top: 10px; width:100%; padding: 10px; border-radius: 8px;
+    border: 1px dashed var(--line); background: transparent; color: var(--muted);
+    font-family:'Oswald'; letter-spacing:0.5px; font-size:13px; cursor:pointer;
+    transition: all .15s;
+  }
+  #add-name-btn:hover:not(:disabled){border-color: var(--gold); color: var(--gold-bright);}
+  #add-name-btn:disabled{opacity:0.4; cursor:not-allowed;}
+
+  .config-panel{display:flex; flex-direction:column; gap: 22px;}
+  .config-block label.field-label{
+    display:block; font-family:'Oswald'; font-size: 12.5px; letter-spacing:0.8px; color: var(--muted); margin-bottom: 10px;
+    text-transform:uppercase;
+  }
+  .duration-row{display:flex; align-items:center; gap:14px;}
+  input[type=range]{
+    -webkit-appearance:none; flex:1; height:5px; border-radius:3px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold) var(--fill,50%), #24384e var(--fill,50%), #24384e 100%);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+    background: var(--gold-bright); border: 3px solid #241a04; cursor:pointer; margin-top:-1px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:16px; height:16px; border-radius:50%; background: var(--gold-bright); border: 3px solid #241a04; cursor:pointer;
+  }
+  #duration-val{font-family:'Space Mono'; font-weight:700; font-size:15px; min-width:44px; text-align:right; color: var(--gold-bright);}
+  .hint{font-size:12px; color:#697d92; margin-top:8px; line-height:1.5;}
+
+  .seed-box{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background: rgba(0,0,0,0.25); border:1px solid var(--line); border-radius:8px; padding: 10px 12px;
+  }
+  #seed-val{font-size:13px; letter-spacing:1px; color: var(--gold-bright);}
+  #reroll-seed{
+    background:transparent; border:1px solid var(--line); color: var(--muted); border-radius:6px;
+    width:30px; height:30px; cursor:pointer; font-size:14px; flex-shrink:0;
+  }
+  #reroll-seed:hover{color: var(--white); border-color: var(--gold);}
+
+  .fair-note{
+    display:flex; gap:10px; padding: 12px; border-radius:8px; background: rgba(42,157,143,0.08);
+    border: 1px solid rgba(42,157,143,0.35); font-size:12.5px; color:#a9d8ce; line-height:1.5;
+  }
+
+  #start-race-btn{
+    width:100%; padding: 16px; margin-top: 4px; border:none; border-radius: 9px; cursor:pointer;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    color:#241a04; font-family:'Oswald'; font-weight:700; font-size: 16px; letter-spacing: 1px;
+    text-transform: uppercase; box-shadow: 0 8px 20px rgba(212,175,55,0.25);
+    transition: transform .12s, box-shadow .12s;
+  }
+  #start-race-btn:hover:not(:disabled){transform: translateY(-1px); box-shadow: 0 10px 26px rgba(212,175,55,0.35);}
+  #start-race-btn:disabled{background:#33465b; color:#6c7d90; box-shadow:none; cursor:not-allowed;}
+  #start-error{color: var(--live-red); font-size:12.5px; margin-top:8px; min-height:16px;}
+
+  /* ---------- Race screen ---------- */
+  #race-screen{display:none;}
+  .scoreboard{
+    display:flex; align-items:center; justify-content:space-between; padding: 14px 20px;
+    flex-wrap:wrap; gap:10px;
+  }
+  .scoreboard-left{display:flex; align-items:center; gap:16px;}
+  .sb-item{display:flex; flex-direction:column;}
+  .sb-item .k{font-size:10.5px; letter-spacing:1px; color:var(--muted); font-family:'Oswald'; text-transform:uppercase;}
+  .sb-item .v{font-family:'Space Mono'; font-weight:700; font-size:17px; color:var(--white);}
+
+  .track-wrap{position:relative; margin-top:14px; overflow:hidden; border-radius: var(--radius); border:1px solid var(--line); box-shadow: var(--shadow);}
+  .track-bg{
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent var(--lane-h,44px)),
+      linear-gradient(180deg, var(--turf-2), var(--turf-1));
+    position:relative; padding: 6px 0;
+  }
+  .lane{
+    position:relative; height: var(--lane-h, 44px); display:flex; align-items:center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .lane:last-child{border-bottom:none;}
+  .lane-number{
+    width:34px; min-width:34px; height:28px; margin-left:8px; border-radius:5px;
+    display:flex; align-items:center; justify-content:center; font-family:'Oswald'; font-weight:700; font-size:13px;
+    z-index:3; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .lane-track{position:absolute; left:52px; right:0; top:0; bottom:0;}
+  .start-gate{
+    position:absolute; left:0; top:2px; bottom:2px; width:3px; background: rgba(255,255,255,0.25);
+  }
+  .finish-line{
+    position:absolute; top:2px; bottom:2px; width:10px; right:26px;
+    background: repeating-linear-gradient(45deg, #fff 0 6px, #111 6px 12px);
+    z-index:2; box-shadow: 0 0 12px rgba(255,255,255,0.4);
+  }
+  .distance-mark{
+    position:absolute; top:0; bottom:0; width:1px; background: rgba(255,255,255,0.06);
+  }
+
+  .runner{
+    position:absolute; top:50%; left:0; transform: translate(0,-50%);
+    display:flex; align-items:center; gap:6px; z-index:4; will-change: transform;
+  }
+  .runner-dog{width:38px; height:26px; position:relative;}
+  .runner-dog svg{width:100%; height:100%; overflow:visible;}
+  .runner.running .runner-dog{animation: gallop 0.42s infinite ease-in-out;}
+  @keyframes gallop{
+    0%,100%{ transform: translateY(0) rotate(0deg); }
+    50%{ transform: translateY(-3px) rotate(-2deg); }
+  }
+  .trail{
+    position:absolute; right:100%; top:50%; transform: translateY(-50%);
+    height: 5px; width: 34px; opacity:0.5; border-radius:3px; filter: blur(1px);
+    background: linear-gradient(90deg, transparent, currentColor);
+  }
+  .name-tag{
+    position:absolute; left: 44px; top:50%; transform: translateY(-50%);
+    display:flex; align-items:center; gap:5px;
+    background: rgba(10,20,32,0.85); border: 1px solid rgba(255,255,255,0.35); color: var(--white);
+    font-size: 10.5px; font-family:'Oswald'; letter-spacing:0.3px; padding: 2px 8px 2px 6px;
+    border-radius: 999px; white-space:nowrap; pointer-events:none;
+  }
+  .name-tag b{color: inherit; opacity:0.9; margin-right:1px;}
+  .tag-dot{
+    width:8px; height:8px; border-radius:50%; flex-shrink:0;
+    border: 1px solid rgba(255,255,255,0.65); box-shadow: 0 0 0 1px rgba(0,0,0,0.35);
+  }
+
+  .finished-flag{position:absolute; right:-2px; top:50%; transform: translate(100%,-50%); font-size:16px;}
+
+  /* countdown overlay */
+  #countdown-overlay{
+    position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center;
+    background: rgba(5,10,16,0.55); backdrop-filter: blur(2px);
+  }
+  #countdown-num{
+    font-family:'Oswald'; font-weight:700; color: var(--gold-bright); text-shadow: 0 0 30px rgba(212,175,55,0.6);
+    font-size: 110px; line-height:1;
+  }
+
+  /* commentary + standings */
+  .below-track{display:grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-top: 14px;}
+  @media (max-width: 800px){ .below-track{grid-template-columns:1fr;} }
+  .commentary{padding: 14px 16px; min-height: 92px;}
+  .commentary .k{font-size:10.5px; letter-spacing:1.5px; color:var(--muted); font-family:'Oswald'; text-transform:uppercase; margin-bottom:8px; display:block;}
+  #commentary-line{font-size: 15px; line-height:1.5; color: var(--white); min-height: 44px;}
+  #commentary-line .flash{color: var(--gold-bright);}
+
+  .standings{padding: 14px 16px;}
+  .standings .k{font-size:10.5px; letter-spacing:1.5px; color:var(--muted); font-family:'Oswald'; text-transform:uppercase; margin-bottom:10px; display:block;}
+  #standings-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; max-height:150px; overflow:auto;}
+  #standings-list li{
+    display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 6px; border-radius:6px;
+  }
+  #standings-list li .pos{font-family:'Space Mono'; font-weight:700; color: var(--muted); width:18px;}
+  #standings-list li .dot{width:9px; height:9px; border-radius:2px; flex-shrink:0;}
+  #standings-list li .nm{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .race-actions{display:flex; gap:10px; margin-top:14px;}
+  .ghost-btn{
+    flex:1; padding: 12px; border-radius:8px; border:1px solid var(--line); background: var(--panel);
+    color: var(--white); font-family:'Oswald'; letter-spacing:0.5px; font-size:13px; cursor:pointer;
+  }
+  .ghost-btn:hover{border-color: var(--gold);}
+
+  /* ---------- Winner overlay ---------- */
+  #winner-overlay{
+    position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
+    background: rgba(4,8,14,0.78); backdrop-filter: blur(4px); padding:20px;
+  }
+  #winner-card{
+    background: linear-gradient(180deg, #16283f, #0d1b2a); border: 1px solid rgba(212,175,55,0.5);
+    border-radius: 16px; padding: 36px 32px; text-align:center; max-width: 440px; width:100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(212,175,55,0.08);
+    animation: cardIn .4s cubic-bezier(.2,.9,.25,1.2);
+  }
+  @keyframes cardIn{ from{opacity:0; transform: scale(0.85) translateY(20px);} to{opacity:1; transform:scale(1) translateY(0);} }
+  #winner-eyebrow{font-family:'Oswald'; letter-spacing:3px; font-size:12px; color: var(--gold-bright); text-transform:uppercase;}
+  #winner-name{
+    font-family:'Oswald'; font-weight:700; font-size: clamp(28px,6vw,42px); margin: 10px 0 6px;
+    color: var(--white); text-shadow: 0 0 30px rgba(212,175,55,0.35);
+  }
+  #winner-margin{color: var(--muted); font-size: 13.5px; margin-bottom: 22px;}
+  #winner-trap{
+    display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px;
+    background: rgba(255,255,255,0.05); border:1px solid var(--line); font-family:'Oswald'; font-size:12.5px; margin-bottom:22px;
+    color: var(--white);
+  }
+  #winner-trap-dot{
+    width:13px; height:13px; border-radius:50%; flex-shrink:0;
+    border: 2px solid rgba(255,255,255,0.6); box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  }
+  .winner-actions{display:flex; gap:10px;}
+  .winner-actions button{flex:1;}
+  #primary-again{
+    padding:13px; border:none; border-radius:8px; cursor:pointer;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#241a04;
+    font-family:'Oswald'; font-weight:700; letter-spacing:0.5px; font-size:14px;
+  }
+  #secondary-new{
+    padding:13px; border:1px solid var(--line); border-radius:8px; cursor:pointer;
+    background:transparent; color: var(--white); font-family:'Oswald'; letter-spacing:0.5px; font-size:14px;
+  }
+
+  .confetti{position:absolute; top:-10px; width:8px; height:14px; opacity:0.9; animation: fall linear forwards;}
+  @keyframes fall{ to{ transform: translateY(420px) rotate(540deg); opacity:0; } }
+
+  footer.credits{text-align:center; color:#4a5b6d; font-size:11.5px; margin-top:28px; letter-spacing:0.3px;}
+</style>
+</head>
+<body>
+<button id="sound-toggle" type="button" aria-label="Toggle sound" title="Toggle sound">🔊</button>
+<div id="app">
+
+  <div class="brand">
+    <div class="brand-mark">
+      <div class="brand-badge">GD</div>
+      <div>
+        <div class="brand-title">GREYHOUND <span>DERBY</span></div>
+        <div class="brand-sub">Enter your names. Let fate decide.</div>
+      </div>
+    </div>
+    <div class="live-pill" id="live-pill"><span class="live-dot"></span><span id="live-text">SETUP</span></div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup-screen" class="panel">
+    <div class="intro">
+      <h1>Set the field</h1>
+      <p>Add 2–12 names. Each becomes a greyhound in trap order. The race outcome is generated from a seed you can see and reuse — nobody, including this app, picks the winner after the fact.</p>
+    </div>
+    <div class="setup-grid">
+      <div>
+        <div class="section-label">Runners</div>
+        <div id="name-list"></div>
+        <button id="add-name-btn" type="button">+ Add another name</button>
+      </div>
+      <div class="config-panel">
+        <div class="config-block">
+          <label class="field-label">Target race length</label>
+          <div class="duration-row">
+            <input type="range" id="duration-slider" min="10" max="30" step="1" value="16">
+            <span id="duration-val">16s</span>
+          </div>
+          <div class="hint">This sets the <em>expected</em> finish time. Actual races vary a little, same as a real one — that variance is what keeps it fair.</div>
+        </div>
+        <div class="config-block">
+          <label class="field-label">Fairness seed</label>
+          <div class="seed-box">
+            <span id="seed-val" class="mono">—</span>
+            <button id="reroll-seed" type="button" title="Generate new seed">↻</button>
+          </div>
+          <div class="fair-note">Every runner is simulated with the exact same speed distribution — only the seed decides who gets lucky. Reuse a seed to replay the identical race.</div>
+        </div>
+        <button id="start-race-btn" type="button" disabled>Start Race</button>
+        <div id="start-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACE -->
+  <div id="race-screen">
+    <div class="panel scoreboard">
+      <div class="scoreboard-left">
+        <div class="sb-item"><span class="k">Race</span><span class="v" id="sb-status">Ready</span></div>
+        <div class="sb-item"><span class="k">Clock</span><span class="v mono" id="sb-clock">0.0s</span></div>
+        <div class="sb-item"><span class="k">Seed</span><span class="v mono" id="sb-seed">—</span></div>
+      </div>
+      <div class="live-pill" id="live-pill-2"><span class="live-dot"></span><span id="live-text-2">LIVE</span></div>
+    </div>
+
+    <div class="track-wrap panel" style="padding:0; border:none;">
+      <div id="countdown-overlay"><div id="countdown-num">3</div></div>
+      <div class="track-bg" id="track-bg"></div>
+    </div>
+
+    <div class="below-track">
+      <div class="panel commentary">
+        <span class="k">Commentary</span>
+        <div id="commentary-line">Runners are being loaded into the traps…</div>
+      </div>
+      <div class="panel standings">
+        <span class="k">Standings</span>
+        <ul id="standings-list"></ul>
+      </div>
+    </div>
+
+    <div class="race-actions">
+      <button class="ghost-btn" id="back-to-setup-btn">← Edit names</button>
+    </div>
+  </div>
+
+  <footer class="credits">Provably-fair simulation · no name is ever weighted · built for quick group decisions</footer>
+</div>
+
+<div id="winner-overlay">
+  <div id="winner-card">
+    <div id="winner-eyebrow">Winner</div>
+    <div id="winner-name">—</div>
+    <div id="winner-margin">—</div>
+    <div id="winner-trap">🏁 <span id="winner-trap-dot"></span><span id="winner-trap-text">Trap —</span></div>
+    <div class="winner-actions">
+      <button id="secondary-new">New names</button>
+      <button id="primary-again">Race again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- constants ----------
+  var TRAP_COLORS = ['#e63946','#2a6fdb','#f1faee','#1a1a1a','#f4a300','#2a9d8f','#e07a5f','#a663cc','#118ab2','#ffb703','#8338ec','#06923e'];
+  var TRAP_LABEL_DARK = ['#f1faee','#1a1a1a']; // colors that need dark text for contrast
+  var MAX_RUNNERS = 12;
+  var MIN_RUNNERS = 2;
+  var TRACK_UNITS = 1000; // abstract track length
+
+  // ---------- state ----------
+  var state = {
+    seed: null,
+    rand: null,
+    duration: 16,
+    dogs: [],
+    raceActive: false,
+    raceStartTime: 0,
+    rafId: null,
+    finishedCount: 0,
+    lastLeader: null,
+    lastCommentAt: 0
+  };
+
+  // ---------- seeded PRNG (mulberry32) ----------
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function makeSeed(){
+    var arr = new Uint32Array(1);
+    if (window.crypto && window.crypto.getRandomValues) { window.crypto.getRandomValues(arr); }
+    else { arr[0] = Math.floor(Math.random()*4294967295); }
+    return arr[0];
+  }
+  function seedToStr(s){
+    return 'GD-' + s.toString(16).toUpperCase().padStart(8,'0');
+  }
+
+  // ================= AUDIO ENGINE (all synthesized, no external files) =================
+  var audioCtx = null;
+  var masterGain = null;
+  var soundOn = true;
+  var bgmStopFlag = true;
+  var bgmTimerId = null;
+
+  function ensureAudio(){
+    if (!audioCtx){
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return; // Web Audio unsupported: app still works, just silent
+      audioCtx = new Ctx();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = soundOn ? 0.8 : 0;
+      masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  var soundToggleBtn = document.getElementById('sound-toggle');
+  soundToggleBtn.addEventListener('click', function(){
+    soundOn = !soundOn;
+    soundToggleBtn.textContent = soundOn ? '🔊' : '🔇';
+    if (audioCtx && masterGain){
+      masterGain.gain.setTargetAtTime(soundOn ? 0.8 : 0, audioCtx.currentTime, 0.05);
+    }
+  });
+
+  function playTone(freq, startTime, duration, type, gainVal, filterFreq){
+    if (!audioCtx) return;
+    var osc = audioCtx.createOscillator();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+    if (filterFreq){
+      var filt = audioCtx.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.frequency.value = filterFreq;
+      osc.connect(filt); filt.connect(gain);
+    } else {
+      osc.connect(gain);
+    }
+    gain.connect(masterGain);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  function playKick(startTime){
+    if (!audioCtx) return;
+    var osc = audioCtx.createOscillator();
+    osc.type = 'sine';
+    var gain = audioCtx.createGain();
+    osc.frequency.setValueAtTime(150, startTime);
+    osc.frequency.exponentialRampToValueAtTime(42, startTime + 0.12);
+    gain.gain.setValueAtTime(0.7, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.16);
+    osc.connect(gain); gain.connect(masterGain);
+    osc.start(startTime); osc.stop(startTime + 0.2);
+  }
+
+  function playNoiseBurst(startTime, duration, filterFreq, gainVal, sweepTo){
+    if (!audioCtx) return;
+    var bufferSize = Math.max(1, Math.floor(audioCtx.sampleRate * duration));
+    var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for (var i = 0; i < bufferSize; i++){ data[i] = Math.random() * 2 - 1; }
+    var noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    var filt = audioCtx.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.setValueAtTime(filterFreq || 800, startTime);
+    if (sweepTo) filt.frequency.linearRampToValueAtTime(sweepTo, startTime + duration);
+    filt.Q.value = 0.9;
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.linearRampToValueAtTime(gainVal, startTime + duration * 0.35);
+    gain.gain.linearRampToValueAtTime(0.0001, startTime + duration);
+    noise.connect(filt); filt.connect(gain); gain.connect(masterGain);
+    noise.start(startTime); noise.stop(startTime + duration + 0.05);
+  }
+
+  function playCountdownBeep(isGo){
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime;
+    if (isGo){
+      // starting horn: short sawtooth blast + noise crack
+      var osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.exponentialRampToValueAtTime(220, t + 0.4);
+      var gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.linearRampToValueAtTime(0.25, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+      osc.connect(gain); gain.connect(masterGain);
+      osc.start(t); osc.stop(t + 0.55);
+      playNoiseBurst(t, 0.3, 1500, 0.18, 2500);
+    } else {
+      playTone(440, t, 0.14, 'square', 0.14, 2200);
+    }
+  }
+
+  function playLeadChangePing(){
+    if (!audioCtx) return;
+    playTone(880, audioCtx.currentTime, 0.12, 'sine', 0.09, 3000);
+  }
+
+  // Procedurally generated race BGM: minor-pentatonic arpeggio over a four-on-the-floor kick.
+  // Fully synthesized (no sampled/licensed music), so it's original to this app.
+  var BGM_SCALE = [0,3,5,7,10,12,15,10]; // semitone offsets, 8-step loop
+  var BGM_ROOT = 110; // A2
+  var BGM_STEP_SEC = 0.16; // ~187 BPM in eighth notes, energetic but not frantic
+
+  function bgmNoteFreq(semitones){ return BGM_ROOT * Math.pow(2, semitones / 12); }
+
+  function scheduleBgmStep(stepIndex, when){
+    var semis = BGM_SCALE[stepIndex % BGM_SCALE.length];
+    playTone(bgmNoteFreq(semis) * 2, when, BGM_STEP_SEC * 0.85, 'sawtooth', 0.045, 1400);
+    if (stepIndex % 2 === 0) playKick(when);
+    if (stepIndex % 4 === 2) playTone(bgmNoteFreq(semis + 12) * 2, when, BGM_STEP_SEC * 0.5, 'triangle', 0.03, 2200);
+  }
+
+  function startBgm(){
+    if (!audioCtx) return;
+    bgmStopFlag = false;
+    var step = 0;
+    function tick(){
+      if (bgmStopFlag) return;
+      scheduleBgmStep(step, audioCtx.currentTime + 0.02);
+      step++;
+      bgmTimerId = setTimeout(tick, BGM_STEP_SEC * 1000);
+    }
+    tick();
+  }
+  function stopBgm(){
+    bgmStopFlag = true;
+    if (bgmTimerId) clearTimeout(bgmTimerId);
+  }
+
+  function playCrowdCheer(){
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime;
+    playNoiseBurst(t, 1.4, 500, 0.32, 2600);
+    playNoiseBurst(t + 0.1, 1.1, 700, 0.2, 2000);
+  }
+
+  function playWinnerFanfare(){
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    notes.forEach(function(freq, i){
+      playTone(freq, t + i * 0.14, 0.4, 'triangle', 0.22, 3500);
+    });
+  }
+
+  // ---------- setup screen: name rows ----------
+  var nameListEl = document.getElementById('name-list');
+  var addBtn = document.getElementById('add-name-btn');
+  var rowCount = 0;
+
+  function addNameRow(prefill){
+    if (rowCount >= MAX_RUNNERS) return;
+    var idx = rowCount; // 0-based trap index at creation time (display renumbers)
+    var row = document.createElement('div');
+    row.className = 'name-row';
+    row.dataset.rowId = String(Date.now()) + Math.random();
+
+    var chip = document.createElement('div');
+    chip.className = 'trap-chip';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = 24;
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    if (prefill) input.value = prefill;
+
+    var removeBtn = document.createElement('button');
+    removeBtn.className = 'remove-btn';
+    removeBtn.type = 'button';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.title = 'Remove';
+    removeBtn.addEventListener('click', function(){
+      row.remove();
+      rowCount--;
+      renumberRows();
+      validateSetup();
+    });
+
+    row.appendChild(chip);
+    row.appendChild(input);
+    row.appendChild(removeBtn);
+    nameListEl.appendChild(row);
+
+    input.addEventListener('input', validateSetup);
+    rowCount++;
+    renumberRows();
+    validateSetup();
+  }
+
+  function renumberRows(){
+    var rows = nameListEl.querySelectorAll('.name-row');
+    rows.forEach(function(row, i){
+      var chip = row.querySelector('.trap-chip');
+      var input = row.querySelector('input');
+      var color = TRAP_COLORS[i % TRAP_COLORS.length];
+      chip.style.background = color;
+      chip.style.color = (color === '#f1faee') ? '#1a1a1a' : (color === '#1a1a1a' ? '#f4a300' : '#0a1420');
+      chip.textContent = String(i+1);
+      input.placeholder = 'Trap ' + (i+1) + ' name';
+      row.querySelector('.remove-btn').style.visibility = rows.length > MIN_RUNNERS ? 'visible' : (i >= MIN_RUNNERS ? 'visible' : 'hidden');
+    });
+    addBtn.disabled = rowCount >= MAX_RUNNERS;
+    addBtn.textContent = rowCount >= MAX_RUNNERS ? 'Field is full (12 runners)' : '+ Add another name';
+  }
+
+  addBtn.addEventListener('click', function(){ addNameRow(); });
+
+  function getNames(){
+    var inputs = nameListEl.querySelectorAll('input');
+    var names = [];
+    inputs.forEach(function(inp){
+      var v = inp.value.trim();
+      if (v.length) names.push(v.slice(0,24));
+    });
+    return names;
+  }
+
+  var startBtn = document.getElementById('start-race-btn');
+  var startError = document.getElementById('start-error');
+  function validateSetup(){
+    var names = getNames();
+    var unique = Array.from(new Set(names.map(function(n){return n.toLowerCase();})));
+    if (names.length < MIN_RUNNERS){
+      startBtn.disabled = true;
+      startError.textContent = 'Add at least ' + MIN_RUNNERS + ' names to race.';
+    } else if (unique.length !== names.length){
+      startBtn.disabled = true;
+      startError.textContent = 'Names must be unique so results are unambiguous.';
+    } else {
+      startBtn.disabled = false;
+      startError.textContent = '';
+    }
+  }
+
+  // ---------- duration slider ----------
+  var durSlider = document.getElementById('duration-slider');
+  var durVal = document.getElementById('duration-val');
+  function updateDurationUI(){
+    var v = parseInt(durSlider.value, 10);
+    state.duration = v;
+    durVal.textContent = v + 's';
+    var pct = ((v - 10) / (30 - 10)) * 100;
+    durSlider.style.setProperty('--fill', pct + '%');
+  }
+  durSlider.addEventListener('input', updateDurationUI);
+
+  // ---------- seed UI ----------
+  var seedValEl = document.getElementById('seed-val');
+  function rollSeed(){
+    state.seed = makeSeed();
+    seedValEl.textContent = seedToStr(state.seed);
+  }
+  document.getElementById('reroll-seed').addEventListener('click', rollSeed);
+
+  // ---------- init setup screen ----------
+  addNameRow('');
+  addNameRow('');
+  updateDurationUI();
+  rollSeed();
+
+  // ================= RACE ENGINE =================
+  var setupScreen = document.getElementById('setup-screen');
+  var raceScreen = document.getElementById('race-screen');
+  var trackBg = document.getElementById('track-bg');
+  var livePill = document.getElementById('live-pill');
+  var liveText = document.getElementById('live-text');
+  var livePill2 = document.getElementById('live-pill-2');
+  var liveText2 = document.getElementById('live-text-2');
+  var sbStatus = document.getElementById('sb-status');
+  var sbClock = document.getElementById('sb-clock');
+  var sbSeed = document.getElementById('sb-seed');
+  var commentaryLine = document.getElementById('commentary-line');
+  var standingsList = document.getElementById('standings-list');
+  var countdownOverlay = document.getElementById('countdown-overlay');
+  var countdownNum = document.getElementById('countdown-num');
+
+  document.getElementById('start-race-btn').addEventListener('click', function(){
+    var names = getNames();
+    buildRace(names);
+  });
+  document.getElementById('back-to-setup-btn').addEventListener('click', function(){
+    stopRace();
+    raceScreen.style.display = 'none';
+    setupScreen.style.display = 'block';
+    livePill.classList.remove('on'); liveText.textContent = 'SETUP';
+  });
+  document.getElementById('secondary-new').addEventListener('click', function(){
+    document.getElementById('winner-overlay').style.display = 'none';
+    raceScreen.style.display = 'none';
+    setupScreen.style.display = 'block';
+    livePill.classList.remove('on'); liveText.textContent = 'SETUP';
+  });
+  document.getElementById('primary-again').addEventListener('click', function(){
+    document.getElementById('winner-overlay').style.display = 'none';
+    // keep same names, roll a fresh seed for a genuinely new race
+    rollSeed();
+    var names = state.dogs.map(function(d){return d.name;});
+    buildRace(names);
+  });
+
+  function buildRace(names){
+    ensureAudio(); // must happen inside a user-gesture handler (this is one: the Start Race click)
+    state.rand = mulberry32(state.seed);
+    // fair lane shuffle: order in the field carries no information
+    var order = names.map(function(n,i){return i;});
+    for (var i = order.length - 1; i > 0; i--){
+      var j = Math.floor(state.rand() * (i+1));
+      var tmp = order[i]; order[i] = order[j]; order[j] = tmp;
+    }
+    state.dogs = order.map(function(origIdx, laneIdx){
+      // Persistent pace multiplier drawn from the SAME distribution for every dog
+      // (Irwin-Hall sum of 3 uniforms -> roughly bell-shaped, centered on 1.0).
+      // This is what creates real distance gaps over the race; fairness comes from
+      // every dog drawing from this identical distribution, not from the value itself.
+      var r = state.rand() + state.rand() + state.rand(); // 0..3, mean 1.5
+      var paceMult = 1 + ((r - 1.5) / 1.5) * 0.22; // roughly 0.78x - 1.22x
+      return {
+        name: names[origIdx],
+        color: TRAP_COLORS[laneIdx % TRAP_COLORS.length],
+        lane: laneIdx,
+        pos: 0,
+        finished: false,
+        finishTime: null,
+        speedJitterPhase: state.rand() * Math.PI * 2,
+        paceMult: paceMult,
+        boostMult: 1,
+        boostTimer: 0
+      };
+    });
+
+    setupScreen.style.display = 'none';
+    raceScreen.style.display = 'block';
+    livePill.classList.add('on'); liveText.textContent = 'LIVE';
+    sbSeed.textContent = seedToStr(state.seed);
+    sbStatus.textContent = 'Loading traps…';
+    sbClock.textContent = '0.0s';
+    commentaryLine.textContent = 'Runners are being loaded into the traps…';
+
+    renderTrack();
+    renderStandings(true);
+
+    // brief pause, then countdown
+    setTimeout(startCountdown, 500);
+  }
+
+  function renderTrack(){
+    trackBg.innerHTML = '';
+    var laneH = state.dogs.length > 9 ? 34 : (state.dogs.length > 6 ? 40 : 44);
+    trackBg.style.setProperty('--lane-h', laneH + 'px');
+
+    state.dogs.forEach(function(dog){
+      var lane = document.createElement('div');
+      lane.className = 'lane';
+
+      var num = document.createElement('div');
+      num.className = 'lane-number';
+      num.style.background = dog.color;
+      num.style.color = contrastColor(dog.color);
+      num.textContent = String(dog.lane + 1);
+      lane.appendChild(num);
+
+      var laneTrack = document.createElement('div');
+      laneTrack.className = 'lane-track';
+
+      var gate = document.createElement('div');
+      gate.className = 'start-gate';
+      laneTrack.appendChild(gate);
+
+      for (var m = 1; m < 4; m++){
+        var mark = document.createElement('div');
+        mark.className = 'distance-mark';
+        mark.style.left = (m * 25) + '%';
+        laneTrack.appendChild(mark);
+      }
+
+      var finish = document.createElement('div');
+      finish.className = 'finish-line';
+      laneTrack.appendChild(finish);
+
+      var runner = document.createElement('div');
+      runner.className = 'runner';
+      runner.style.color = dog.color;
+      runner.innerHTML =
+        '<div class="trail"></div>' +
+        '<div class="runner-dog">' + greyhoundSVG(dog.color) + '</div>' +
+        '<div class="name-tag" style="border-color:' + visibleAccent(dog.color) + '">' +
+          '<span class="tag-dot" style="background:' + dog.color + '"></span>' +
+          '<b>#' + (dog.lane+1) + '</b>' + escapeHtml(dog.name) +
+        '</div>';
+      laneTrack.appendChild(runner);
+      dog.runnerEl = runner;
+      dog.laneTrackEl = laneTrack;
+
+      lane.appendChild(laneTrack);
+      trackBg.appendChild(lane);
+    });
+  }
+
+  function greyhoundSVG(color){
+    return '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">' +
+      '<g fill="' + color + '" stroke="#0a1420" stroke-width="2" stroke-linejoin="round">' +
+      '<path d="M12 40 C10 30 18 20 30 18 C40 16 46 10 56 9 C64 8 70 12 72 18 C80 20 88 22 92 28 C94 31 92 34 88 34 L80 34 L78 40 L70 40 L69 35 C58 37 46 37 36 39 L34 46 L26 46 L26 40 C18 41 13 44 8 44 C6 44 6 41 12 40 Z"/>' +
+      '<path d="M60 10 L66 2 L70 3 L67 11 Z"/>' +
+      '</g>' +
+      '<g stroke="' + color + '" stroke-width="4" stroke-linecap="round">' +
+      '<path d="M30 42 L26 54" /><path d="M46 42 L50 54" /><path d="M20 32 L14 44" /><path d="M66 34 L70 44" />' +
+      '</g>' +
+      '</svg>';
+  }
+
+  function contrastColor(hex){
+    var c = hex.replace('#','');
+    var r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    var yiq = (r*299 + g*587 + b*114) / 1000;
+    return yiq >= 150 ? '#14213d' : '#f4f7fa';
+  }
+  // For UI chrome (borders/accents) on this app's dark background: if a trap color is
+  // itself too dark to read, blend it toward white so the accent stays visible.
+  // Text is never colored with this raw value directly -- see showWinnerOverlay.
+  function visibleAccent(hex){
+    var c = hex.replace('#','');
+    var r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    var yiq = (r*299 + g*587 + b*114) / 1000;
+    if (yiq < 70){
+      r = Math.round(r + (255-r)*0.55);
+      g = Math.round(g + (255-g)*0.55);
+      b = Math.round(b + (255-b)*0.55);
+      return 'rgb(' + r + ',' + g + ',' + b + ')';
+    }
+    return hex;
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function startCountdown(){
+    var seq = ['3','2','1','GO!'];
+    var i = 0;
+    countdownOverlay.style.display = 'flex';
+    sbStatus.textContent = 'Starting…';
+    function step(){
+      countdownNum.textContent = seq[i];
+      countdownNum.style.animation = 'none';
+      void countdownNum.offsetWidth;
+      countdownNum.style.animation = 'cardIn .3s ease-out';
+      playCountdownBeep(seq[i] === 'GO!');
+      i++;
+      if (i < seq.length){
+        setTimeout(step, 650);
+      } else {
+        setTimeout(function(){
+          countdownOverlay.style.display = 'none';
+          launchRace();
+        }, 550);
+      }
+    }
+    step();
+  }
+
+  function launchRace(){
+    state.dogs.forEach(function(d){ d.runnerEl.classList.add('running'); });
+    state.raceActive = true;
+    state.raceStartTime = performance.now();
+    state.lastFrameTs = null;
+    state.finishedCount = 0;
+    state.lastLeader = null;
+    state.lastCommentAt = 0;
+    sbStatus.textContent = 'Racing';
+    commentaryLine.innerHTML = '<span class="flash">And they are off!</span>';
+    startBgm();
+    state.rafId = requestAnimationFrame(loop);
+  }
+
+  var COMMENT_POOL = [
+    '{a} is holding a narrow lead over {b}.',
+    'It is bunched up through the back stretch.',
+    '{a} finds another gear!',
+    '{b} is starting to fade back.',
+    '{a} and {b} are stride for stride.',
+    'A gap is opening up at the front.',
+    '{a} is closing fast on the outside!',
+    'This one is far from decided.'
+  ];
+
+  function pickComment(sorted){
+    var a = sorted[0], b = sorted[1] || sorted[0];
+    var leaderName = a.name;
+    var text;
+    if (state.lastLeader !== null && state.lastLeader !== leaderName){
+      text = leaderName + ' surges into the lead!';
+      playLeadChangePing();
+    } else {
+      var tmpl = COMMENT_POOL[Math.floor(Math.random() * COMMENT_POOL.length)];
+      text = tmpl.replace('{a}', a.name).replace('{b}', b.name);
+    }
+    state.lastLeader = leaderName;
+    commentaryLine.innerHTML = '<span class="flash">' + escapeHtml(text) + '</span>';
+  }
+
+  function loop(now){
+    if (!state.raceActive) return;
+    if (!state.lastFrameTs) state.lastFrameTs = now;
+    var dt = (now - state.lastFrameTs) / 1000;
+    if (dt > 0.05) dt = 0.05; // clamp so a stalled/backgrounded tab doesn't jump dogs forward
+    if (dt <= 0) dt = 1/60;
+    state.lastFrameTs = now;
+
+    var elapsed = (now - state.raceStartTime) / 1000; // seconds
+    sbClock.textContent = elapsed.toFixed(1) + 's';
+
+    var baseSpeed = TRACK_UNITS / state.duration; // units per second, identical for every dog
+
+    var anyFinished = false;
+    state.dogs.forEach(function(dog){
+      if (dog.finished) return;
+
+      // Sustained surge/fade windows (0.5-1.4s), same trigger probability for every dog.
+      if (dog.boostTimer > 0){
+        dog.boostTimer -= dt;
+        if (dog.boostTimer <= 0){ dog.boostTimer = 0; dog.boostMult = 1; }
+      } else if (state.rand() < 0.8 * dt){ // ~0.8 attempts/sec while not already boosted
+        var isSurge = state.rand() < 0.55;
+        dog.boostMult = isSurge ? (1.25 + state.rand() * 0.35) : (0.55 + state.rand() * 0.2);
+        dog.boostTimer = 0.5 + state.rand() * 0.9;
+      }
+
+      // small texture on top, bounded so it doesn't dominate the pace/boost signal
+      var wobble = Math.sin(elapsed * 3.1 + dog.speedJitterPhase) * 0.05;
+      var microNoise = (state.rand() - 0.5) * 0.06;
+
+      var speed = baseSpeed * dog.paceMult * dog.boostMult * (1 + wobble + microNoise);
+      if (speed < 0) speed = 0;
+      dog.pos += speed * dt;
+
+      if (dog.pos >= TRACK_UNITS){
+        dog.pos = TRACK_UNITS;
+        dog.finished = true;
+        dog.finishTime = elapsed;
+        anyFinished = true;
+      }
+
+      var pct = Math.min(100, (dog.pos / TRACK_UNITS) * 100);
+      dog.runnerEl.style.left = 'calc(' + pct + '% - 38px)';
+      if (dog.finished){
+        dog.runnerEl.classList.remove('running');
+      }
+    });
+
+    // commentary every ~1.8s
+    if (elapsed - state.lastCommentAt > 1.8){
+      state.lastCommentAt = elapsed;
+      var sorted = state.dogs.slice().sort(function(a,b){return b.pos - a.pos;});
+      pickComment(sorted);
+      renderStandings(false, sorted);
+    }
+
+    if (anyFinished){
+      var winner = state.dogs.filter(function(d){return d.finished;}).sort(function(a,b){return a.finishTime - b.finishTime;})[0];
+      finishRace(winner);
+      return;
+    }
+
+    state.rafId = requestAnimationFrame(loop);
+  }
+
+  function renderStandings(initial, sortedArg){
+    var sorted = sortedArg || state.dogs.slice().sort(function(a,b){return b.pos - a.pos;});
+    standingsList.innerHTML = '';
+    sorted.forEach(function(dog, i){
+      var li = document.createElement('li');
+      li.innerHTML =
+        '<span class="pos">' + (i+1) + '</span>' +
+        '<span class="dot" style="background:' + dog.color + '"></span>' +
+        '<span class="nm">' + escapeHtml(dog.name) + '</span>';
+      standingsList.appendChild(li);
+    });
+  }
+
+  function finishRace(winner){
+    state.raceActive = false;
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    state.dogs.forEach(function(d){ d.runnerEl.classList.remove('running'); });
+    sbStatus.textContent = 'Finished';
+    stopBgm();
+    playCrowdCheer();
+    var sorted = state.dogs.slice().sort(function(a,b){return b.pos - a.pos;});
+    renderStandings(false, sorted);
+
+    var second = sorted[1];
+    var marginUnits = second ? (winner.pos - second.pos) : 0;
+    var marginPct = (marginUnits / TRACK_UNITS) * 100;
+    var marginText;
+    if (!second) marginText = 'Solo runner.';
+    else if (marginPct < 1.2) marginText = 'Photo finish — won by a nose over ' + second.name + '.';
+    else if (marginPct < 5) marginText = 'A close one — edged out ' + second.name + '.';
+    else marginText = 'A clear win over ' + second.name + '.';
+
+    commentaryLine.innerHTML = '<span class="flash">' + escapeHtml(winner.name + ' wins it!') + '</span>';
+
+    setTimeout(function(){
+      showWinnerOverlay(winner, marginText);
+      playWinnerFanfare();
+    }, 700);
+  }
+
+  function stopRace(){
+    state.raceActive = false;
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    stopBgm();
+  }
+
+  function showWinnerOverlay(winner, marginText){
+    document.getElementById('winner-name').textContent = winner.name;
+    document.getElementById('winner-margin').textContent = marginText;
+    document.getElementById('winner-trap-text').textContent = 'Trap ' + (winner.lane+1);
+    document.getElementById('winner-trap-dot').style.background = winner.color;
+    document.getElementById('winner-trap').style.borderColor = visibleAccent(winner.color);
+    var overlay = document.getElementById('winner-overlay');
+    overlay.style.display = 'flex';
+    burstConfetti(overlay, visibleAccent(winner.color));
+  }
+
+  function burstConfetti(container, accentColor){
+    var colors = [accentColor, '#d4af37', '#f2d16b', '#ffffff'];
+    for (var i = 0; i < 46; i++){
+      (function(i){
+        var el = document.createElement('div');
+        el.className = 'confetti';
+        var left = 50 + (Math.random()*70 - 35);
+        el.style.left = left + '%';
+        el.style.background = colors[Math.floor(Math.random()*colors.length)];
+        el.style.animationDuration = (1.1 + Math.random()*0.9) + 's';
+        el.style.animationDelay = (Math.random()*0.3) + 's';
+        el.style.transform = 'rotate(' + Math.floor(Math.random()*360) + 'deg)';
+        container.appendChild(el);
+        setTimeout(function(){ el.remove(); }, 2600);
+      })(i);
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
