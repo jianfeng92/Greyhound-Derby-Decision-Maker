@@ -87,4 +87,4 @@ Static file, so any static host works. Two easy options:
 
 ## License
 
-No license file is included yet — add one (e.g. MIT) if you want to make the reuse terms explicit before sharing the repo publicly.
+No license file is included yet
